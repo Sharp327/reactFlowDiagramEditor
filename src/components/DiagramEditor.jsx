@@ -1,0 +1,37 @@
+import React, { useMemo } from 'react';
+import ReactFlow from 'reactflow';
+import useDiagram from '../hooks/useDiagram';
+import 'reactflow/dist/style.css';
+import Node from './Node';
+
+const DiagramEditor = () => {
+  const { nodes, edges, addNode, addEdge } = useDiagram();
+
+  // Define node types outside of the component or memoize them
+  const nodeTypes = useMemo(() => ({
+    custom: Node,
+  }), []);
+
+  const onConnect = (params) => {
+    addEdge(params.source, params.target);
+  };
+
+  const handleAddNode = () => {
+    addNode(`Node ${nodes.length + 1}`);
+  };
+
+  return (
+    <div style={{ width: '100%', height: '500px' }}>
+      <button onClick={handleAddNode}>Add Node</button>
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onConnect={onConnect}
+        nodeTypes={nodeTypes} // Use the memoized node types
+        fitView
+      />
+    </div>
+  );
+};
+
+export default DiagramEditor;
