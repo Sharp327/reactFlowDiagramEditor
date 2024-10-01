@@ -1,20 +1,16 @@
-const detectIntersections = (edges) => {
+const detectIntersections = (edges, nodes) => {
   const intersections = [];
   const points = {};
 
   edges.forEach(edge => {
-    const { source, target } = edge;
-    const sourceNode = document.getElementById(source);
-    const targetNode = document.getElementById(target);
-    
-    if (sourceNode && targetNode) {
-      const sourcePosition = sourceNode.getBoundingClientRect();
-      const targetPosition = targetNode.getBoundingClientRect();
+    const sourceNode = nodes.find(n => n.id === edge.source);
+    const targetNode = nodes.find(n => n.id === edge.target);
 
-      // Calculate midpoint for each edge to detect intersections
+    if (sourceNode && targetNode) {
+      // Use midpoint for potential jumper placement
       const midPoint = {
-        x: (sourcePosition.x + targetPosition.x) / 2,
-        y: (sourcePosition.y + targetPosition.y) / 2,
+        x: (sourceNode.position.x + targetNode.position.x) / 2,
+        y: (sourceNode.position.y + targetNode.position.y) / 2,
       };
 
       const key = `${midPoint.x},${midPoint.y}`;
