@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import ReactFlow from 'reactflow';
 import useDiagram from '../hooks/useDiagram';
 import 'reactflow/dist/style.css';
@@ -6,15 +6,14 @@ import Node from './Node';
 import JumperComponent from './JumperComponent';
 import detectIntersections from '../utils/detectIntersections';
 import CustomEdge from './CustomEdge';
+import IntersectionNode from './IntersectionNode';
+const edgeTypes = { custom: CustomEdge };
+const nodeTypes = { custom: Node, intersection: IntersectionNode };
 
 const DiagramEditor = () => {
   const { nodes, edges, addNode, addEdge } = useDiagram();
-  const intersections = detectIntersections(edges, nodes);
-  const edgeTypes = { custom: CustomEdge };
-
-  const nodeTypes = useMemo(() => ({
-    custom: Node,
-  }), []);
+  // const intersections = detectIntersections(edges, nodes);
+  // const { updatedEdges, intersections } = optimizePaths(nodes, edges);
 
   const onConnect = (params) => {
     addEdge(params.source, params.target);
@@ -24,20 +23,23 @@ const DiagramEditor = () => {
     addNode(`Node ${nodes.length + 1}`);
   };
 
+  // Optimize paths before rendering
+
+  console.log(nodes);
   return (
     <div style={{ width: '100%', height: '500px' }}>
       <button onClick={handleAddNode}>Add Node</button>
       <ReactFlow
         nodes={nodes}
-        edges={edges}
-        onConnect={onConnect}
+        edges={edges}  // Use updated edges with optimized paths
         nodeTypes={nodeTypes}
-        edgeTypes={edgeTypes}
+        edgeTypes={edgeTypes}  // Pass custom edge type
+        onConnect={onConnect}
         fitView
       />
-      {intersections.map((jumper, index) => (
+      {/* {intersections.map((jumper, index) => (
         <JumperComponent key={index} x={jumper.x} y={jumper.y} />
-      ))}
+      ))} */}
     </div>
   );
 };

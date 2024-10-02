@@ -1,39 +1,28 @@
+// CustomEdge.js
 import React from 'react';
-import { getBezierPath, getEdgeCenter, EdgeText } from 'reactflow';
 
-// Define a custom edge component
 const CustomEdge = ({
   id,
   sourceX,
   sourceY,
   targetX,
   targetY,
-  sourcePosition,
-  targetPosition,
   style = {},
+  data,
   markerEnd,
 }) => {
-  // Define a custom path (e.g., bezier)
-  const [edgePath, labelX, labelY] = getBezierPath({
-    sourceX,
-    sourceY,
-    sourcePosition,
-    targetX,
-    targetY,
-    targetPosition,
-  });
+  // Use the custom path stored in the edge data
+  const edgePath = data?.customPath || `M${sourceX},${sourceY} L${targetX},${targetY}`;
 
   return (
     <>
-      {/* Render the custom edge path */}
       <path
         id={id}
-        style={style}
+        style={{ stroke: '#00f', strokeWidth: 2 }}
         className="react-flow__edge-path"
         d={edgePath}
         markerEnd={markerEnd}
       />
-      <EdgeText x={labelX} y={labelY} label="Custom Label" />
     </>
   );
 };
