@@ -4,7 +4,7 @@ import useDiagram from '../hooks/useDiagram';
 import 'reactflow/dist/style.css';
 import Node from './Node';
 import JumperComponent from './JumperComponent';
-import detectIntersections from '../utils/detectIntersections';
+import {optimizePaths} from '../utils/optimizedPath';
 import CustomEdge from './CustomEdge';
 import IntersectionNode from './IntersectionNode';
 const edgeTypes = { custom: CustomEdge };
@@ -13,7 +13,6 @@ const nodeTypes = { custom: Node, intersection: IntersectionNode };
 const DiagramEditor = () => {
   const { nodes, edges, addNode, addEdge } = useDiagram();
   // const intersections = detectIntersections(edges, nodes);
-  // const { updatedEdges, intersections } = optimizePaths(nodes, edges);
 
   const onConnect = (params) => {
     addEdge(params.source, params.target);

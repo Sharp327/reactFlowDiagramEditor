@@ -17,8 +17,8 @@ const arrangeNodes = (nodes, edges, direction = 'TB') => {
   return nodes.map(node => {
     const nodeWithPosition = dagreGraph.node(node.id);
     node.position = {
-      x: nodeWithPosition.x - 100 / 2,
-      y: nodeWithPosition.y - 36 / 2,
+      x: nodeWithPosition.x,
+      y: nodeWithPosition.y,
     };
     return node;
   });

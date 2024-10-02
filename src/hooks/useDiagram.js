@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import dagre from 'dagre';
 import debounce from 'lodash.debounce';
-import detectIntersections from '../utils/detectIntersections';
+import {optimizePaths, getIntersection} from '../utils/optimizedPath';
 
 // Custom hook for managing the diagram's state
 const useDiagram = () => {
@@ -53,13 +53,14 @@ const useDiagram = () => {
         return {
           ...node,
           position: {
-            x: nodeWithPosition.x - 100 / 2,
-            y: nodeWithPosition.y - 36 / 2,
+            x: nodeWithPosition.x,
+            y: nodeWithPosition.y,
           },
         };
       });
-      const intersections = detectIntersections(edges, arrangedNodes);
-
+      
+      const { updatedEdges, intersections } = optimizePaths(arrangedNodes, edges);
+      setEdges(updatedEdges); // Update state with the new edge
       setNodes([...arrangedNodes, ...intersections]); // Update the state with arranged nodes
     } catch (error) {
       console.error('Error during layout:', error);
@@ -91,14 +92,11 @@ const useDiagram = () => {
         id: `e${source}-${target}-${Date.now()}`, // Ensure uniqueness
         source,
         target,
-        type: 'smoothstep'
+        type: 'custom'
       };
 
       const newEdges = [...edges, newEdge];
       setEdges(newEdges); // Update state with the new edge
-      const intersections = detectIntersections(newEdges, nodes.filter((val)=>val.type == 'custom'));
-
-      setNodes([...nodes.filter((val)=>val.type == 'custom'), ...intersections]); 
       arrangeNodesDebounced(nodes.filter((val)=>val.type == 'custom'), newEdges);
 
     } else {

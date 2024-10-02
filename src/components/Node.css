@@ -1,11 +1,12 @@
 .custom-node {
     border: 1px solid #777;
-    padding: 10px;
+    padding-top: 10px;
+    padding-bottom: 10px;
     background-color: #fff;
     border-radius: 5px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
     text-align: center;
-    width: 70px; /* Adjust width as needed */
+    width: 100px; /* Adjust width as needed */
   }
   
   .node-content {

@@ -1,27 +1,17 @@
 // CustomEdge.js
 import React from 'react';
 
-const CustomEdge = ({
-  id,
-  sourceX,
-  sourceY,
-  targetX,
-  targetY,
-  style = {},
-  data,
-  markerEnd,
-}) => {
+const CustomEdge = (data) => {
   // Use the custom path stored in the edge data
-  const edgePath = data?.customPath || `M${sourceX},${sourceY} L${targetX},${targetY}`;
-
+console.log(data);
   return (
     <>
       <path
-        id={id}
+        id={data.id}
         style={{ stroke: '#00f', strokeWidth: 2 }}
         className="react-flow__edge-path"
-        d={edgePath}
-        markerEnd={markerEnd}
+        d={data.data?.path}
+        markerEnd={data.markerEnd}
       />
     </>
   );

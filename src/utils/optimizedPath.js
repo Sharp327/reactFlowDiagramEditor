@@ -29,120 +29,17 @@ const getLineIntersectionPoint = (A, B, C, D) => {
   return { x: intersectionX, y: intersectionY };
 };
 
-// Helper function to detect if a line intersects a node bounding box
-const doesLineIntersectNode = (node, lineStart, lineEnd) => {
-  const nodeXMin = node.position.x - 100 / 2;
-  const nodeXMax = node.position.x + 100 / 2;
-  const nodeYMin = node.position.y - 36 / 2;
-  const nodeYMax = node.position.y + 36 / 2;
-
-  // Check if the line crosses the bounding box of the node
-  const intersectsHorizontally =
-    (lineStart.x >= nodeXMin && lineStart.x <= nodeXMax) ||
-    (lineEnd.x >= nodeXMin && lineEnd.x <= nodeXMax);
-  const intersectsVertically =
-    (lineStart.y >= nodeYMin && lineStart.y <= nodeYMax) ||
-    (lineEnd.y >= nodeYMin && lineEnd.y <= nodeYMax);
-
-  return intersectsHorizontally && intersectsVertically;
-};
-
-// Add similar logs before generating the path
-const getShorterSegmentedPath = (sourceX, sourceY, targetX, targetY) => {
-  console.log('Path start:', { sourceX, sourceY, targetX, targetY }); // Debugging log
-  
-  const segmentLength = 50;
-  
-  let path = `M${sourceX},${sourceY}`;
-  
-  // Ensure vertical start for a cleaner path at the bottom edge of the node
-  const verticalStartY = sourceY; // Start directly from the bottom border
-  path += ` L${sourceX},${verticalStartY}`;
-  
-  let currentX = sourceX;
-  let currentY = verticalStartY;
-  
-  while (Math.abs(currentX - targetX) > segmentLength || Math.abs(currentY - targetY) > segmentLength) {
-    if (Math.abs(currentY - targetY) > segmentLength) {
-        currentY += currentY < targetY ? segmentLength : -segmentLength;
-      } else {
-        currentX += currentX < targetX ? segmentLength : -segmentLength;
-    }
-  
-    path += ` L${currentX},${currentY}`;
-  }
-  
-  path += ` L${targetX},${targetY}`;
-  return path;
-};
-
-// Functions to get start and end points of nodes
-const getBottomCenter = (node) => ({
-  x: node.position.x + 100 / 2,
-  y: node.position.y + 36,
-});
-
 const getTopCenter = (node) => ({
-  x: node.position.x + 100 / 2,
+  x: node.position.x + 51,
   y: node.position.y,
 });
 
 // Remove space from the output start
-const getVerticalOutputStart = (node) => ({
-  x: node.position.x + 100 / 2,
+const getBottomCenter = (node) => ({
+  x: node.position.x + 51,
   y: node.position.y + 36, // Align with the bottom border
 });
 
-// Dijkstra's Algorithm to find the shortest path
-const dijkstra = (nodes, edges, startId, endId) => {
-  const distances = {};
-  const previous = {};
-  const queue = [];
-
-  nodes.forEach(node => {
-    distances[node.id] = Infinity;
-    previous[node.id] = null;
-    queue.push(node.id);
-  });
-
-  distances[startId] = 0;
-
-  while (queue.length > 0) {
-    // Get the node with the smallest distance
-    const currentId = queue.reduce((minNodeId, nodeId) => 
-      distances[nodeId] < distances[minNodeId] ? nodeId : minNodeId
-    );
-
-    if (currentId === endId) {
-      break; // We found the shortest path to the target node
-    }
-
-    queue.splice(queue.indexOf(currentId), 1); // Remove current node from the queue
-
-    edges.forEach(edge => {
-      if (edge.source === currentId || edge.target === currentId) {
-        const neighborId = edge.source === currentId ? edge.target : edge.source;
-        const newDistance = distances[currentId] + edge.data.weight; // Use edge weight
-
-        if (newDistance < distances[neighborId]) {
-          distances[neighborId] = newDistance;
-          previous[neighborId] = currentId;
-        }
-      }
-    });
-  }
-
-  // Reconstruct the shortest path
-  const path = [];
-  let currentNodeId = endId;
-
-  while (currentNodeId !== null) {
-    path.unshift(currentNodeId);
-    currentNodeId = previous[currentNodeId];
-  }
-
-  return path.length > 1 ? path : []; // Return the path or an empty array if no path found
-};
 const createSmoothstepCurve = (start, end, offset) => {
     const controlPoint1 = {
       x: start.x + offset.x,
@@ -154,92 +51,141 @@ const createSmoothstepCurve = (start, end, offset) => {
     };
     
     return `M${start.x},${start.y} C${controlPoint1.x},${controlPoint1.y} ${controlPoint2.x},${controlPoint2.y} ${end.x},${end.y}`;
-  };
-  
-  const getAdjustedPathAroundNode = (sourceX, sourceY, targetX, targetY, node) => {
-    const nodeXMin = node.position.x - 100 / 2;
-    const nodeXMax = node.position.x + 100 / 2;
-    const nodeYMin = node.position.y - 36 / 2;
-    const nodeYMax = node.position.y + 36 / 2;
-  
-    // Control point offset for smoothness
-    const controlOffset = 50; // Change this value to adjust the curve's depth
-    const offset = { x: controlOffset, y: 0 }; // Offset for the control points
-  
-    // Determine where to offset the path based on the node's position
-    if (sourceY < nodeYMin) {
-      // Source is above the node
-      return createSmoothstepCurve({ x: sourceX, y: sourceY }, { x: targetX, y: targetY }, offset);
-    } else if (sourceY > nodeYMax) {
-      // Source is below the node
-      return createSmoothstepCurve({ x: sourceX, y: sourceY }, { x: targetX, y: targetY }, offset);
-    } else if (sourceX < nodeXMin) {
-      // Source is left of the node
-      return createSmoothstepCurve({ x: sourceX, y: sourceY }, { x: targetX, y: targetY }, offset);
-    } else if (sourceX > nodeXMax) {
-      // Source is right of the node
-      return createSmoothstepCurve({ x: sourceX, y: sourceY }, { x: targetX, y: targetY }, offset);
-    } else {
-      // Default straight line if no intersection
-      return `M${sourceX},${sourceY} L${targetX},${targetY}`;
-    }
-  };
-  
-  // Optimize paths and find intersections
-  const optimizePaths = (nodes, edges) => {
-    const updatedEdges = edges.map(edge => {
-      const sourceNode = nodes.find(n => n.id === edge.source);
-      const targetNode = nodes.find(n => n.id === edge.target);
-  
-      if (!sourceNode || !targetNode) return edge;
-  
-      const sourcePoint = getVerticalOutputStart(sourceNode);
-      const targetPoint = getTopCenter(targetNode);
-  
-      const intersectingNode = nodes.find(node =>
-        node.id !== sourceNode.id && node.id !== targetNode.id &&
-        doesLineIntersectNode(node, sourcePoint, targetPoint)
-      );
-  
-      let edgePath;
-      if (intersectingNode) {
-        edgePath = getAdjustedPathAroundNode(
-          sourcePoint.x,
-          sourcePoint.y,
-          targetPoint.x,
-          targetPoint.y,
-          intersectingNode
-        );
-      } else {
-        edgePath = createSmoothstepCurve(sourcePoint, targetPoint, { x: 50, y: 0 });
-      }
-  
-      return {
-        ...edge,
-        path: edgePath,
-      };
-    });
-
-  const intersections = [];
-  for (let i = 0; i < updatedEdges.length; i++) {
-    for (let j = i + 1; j < updatedEdges.length; j++) {
-      const edge1 = updatedEdges[i];
-      const edge2 = updatedEdges[j];
-
-      const A = getVerticalOutputStart(nodes.find(n => n.id === edge1.source));
-      const B = getTopCenter(nodes.find(n => n.id === edge1.target));
-      const C = getVerticalOutputStart(nodes.find(n => n.id === edge2.source));
-      const D = getTopCenter(nodes.find(n => n.id === edge2.target));
-
-      if (checkLineIntersection(A, B, C, D)) {
-        const intersectionPoint = getLineIntersectionPoint(A, B, C, D);
-        intersections.push(intersectionPoint);
-      }
-    }
-  }
-
-  return { updatedEdges, intersections };
 };
   
-export default optimizePaths;
+const getIntersection = (edge1, edge2, nodes) => {
+  // Get the start and end points of the two edges
+  const A = getBottomCenter(nodes.find(n => n.id === edge1.source));
+  const B = getTopCenter(nodes.find(n => n.id === edge1.target));
+  const C = getBottomCenter(nodes.find(n => n.id === edge2.source));
+  const D = getTopCenter(nodes.find(n => n.id === edge2.target));
+
+  // Check if the edges intersect
+  if (checkLineIntersection(A, B, C, D)) {
+    // Get the intersection point if the lines intersect
+    return getLineIntersectionPoint(A, B, C, D);
+  }
+
+  return null; // Return null if no intersection is found
+};
+
+// Function to create a stepping (orthogonal) path
+const createSteppingLine = (start, end, offset = 50) => {
+  const midX = (start.x + end.x) / 2; // Midpoint X between start and end
+  const midY = (start.y + end.y) / 2; // Midpoint Y between start and end
+  
+  return `M${start.x},${start.y} ` +  // Start point
+         `L${start.x},${midY} ` +     // Horizontal line from start to midpoint x
+         `L${end.x},${midY} ` +       // Vertical line down/up to target's y level
+         `L${end.x},${end.y}`;        // Horizontal line to target point
+};
+
+const createSteppedPathAroundMultipleNodes = (start, end, nodes) => {
+  // Find all nodes that the line might intersect
+  const nodesToAvoid = nodes.filter(node => (
+    (start.x < node.position.x + node.width && start.x > node.position.x) ||
+    (end.x < node.position.x + node.width && end.x > node.position.x)
+  ));
+
+  // If there are no nodes to avoid, create a direct path
+  if (nodesToAvoid.length === 0) {
+    return `M${start.x},${start.y} L${end.x},${end.y}`;
+  }
+
+  // Sort nodes to avoid by their x positions
+  const sortedNodes = nodesToAvoid.sort((a, b) => a.position.x - b.position.x);
+
+  let path = `M${start.x},${start.y} `; // Start the path from the source
+
+  // Create the stepping path around each node
+  for (let i = 0; i < sortedNodes.length; i++) {
+    const node = sortedNodes[i];
+    const leftSide = {
+      x: node.position.x - OFFSET,
+      y: start.y
+    };
+    const rightSide = {
+      x: node.position.x + node.width + OFFSET,
+      y: start.y
+    };
+
+    // Decide which side to go based on the relative position of the start and end
+    const midpointX = (start.x + end.x) / 2;
+
+    if (midpointX < node.position.x) {
+      // Go left if the midpoint is to the left of the node
+      path += `L${leftSide.x},${start.y} `;
+    } else {
+      // Go right if the midpoint is to the right of the node
+      path += `L${rightSide.x},${start.y} `;
+    }
+
+    // Move down to a vertical position below the node
+    path += `L${leftSide.x},${node.position.y + node.height + OFFSET} `;
+    
+    // Update the starting point for the next segment
+    start.y = node.position.y + node.height + OFFSET; // Set new start point to be below this node
+  }
+
+  // Finally, connect to the end point
+  path += `L${end.x},${start.y} `; // Go horizontally to the target
+  path += `L${end.x},${end.y}`;     // Finally, connect to the bottom center of the target node
+
+  return path;
+};
+
+
+// Optimize paths and find intersections
+const optimizePaths = (nodes, edges) => {
+  const updatedEdges = edges.map(edge => {
+    const sourceNode = nodes.find(n => n.id === edge.source);
+    const targetNode = nodes.find(n => n.id === edge.target);
+
+    if (!sourceNode || !targetNode) return edge;
+
+    const sourcePoint = getBottomCenter(sourceNode);
+    const targetPoint = getTopCenter(targetNode);
+
+    let edgePath;
+    edgePath = createSteppedPathAroundMultipleNodes(sourcePoint, targetPoint, nodes);
+    // edgePath = createSmoothstepCurve(sourcePoint, targetPoint, { x: 50, y: 0 });
+
+    return {
+      ...edge,
+      data: {
+        path: edgePath,
+      }
+    };
+  });
+
+  console.log(updatedEdges);
+
+  const intersections = [];
+
+  // updatedEdges.forEach((edge1, index1) => {
+  //   updatedEdges.forEach((edge2, index2) => {
+  //     if (index1 !== index2) {  // Avoid comparing the edge with itself
+  //       const intersectionPoints = getIntersection(edge1, edge2, nodes);
+  //       if (intersectionPoints) {
+  //         intersections.push(intersectionPoints);
+  //       }
+  //     }
+  //   });
+  // });
+
+  const uniqueIntersections = intersections
+  .map((point) => ({
+    id: `intersection-${JSON.stringify([point.x, point.y])}`, // Generate unique ID based on coordinates
+    type: 'intersection',
+    position: {x: point.x, y: point.y},
+    data: {},
+  }))
+  .filter((node, index, self) => 
+    index === self.findIndex((n) => n.id === node.id) // Keep the first occurrence of each ID
+  );
+
+  return { updatedEdges, intersections: uniqueIntersections };
+};
+  
+export {optimizePaths, getIntersection};
   
